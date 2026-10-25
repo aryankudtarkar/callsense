@@ -70,3 +70,4 @@ Open `http://127.0.0.1:8000` (or `http://127.0.0.1:8000/analyze` directly) in yo
   - Real-time incremental processing would require causal convolution / attention masks and robust streaming Voice Activity Detection (VAD) to avoid arbitrary boundary cutoffs.
   - Browser microphone capture introduces unnecessary permission and privacy surface without operational justification for a post-call review prototype.
   - No fake live animations or simulated streaming loops are permitted or implemented.
+# callsense
