@@ -1,0 +1,25 @@
+# Model and runtime comparison
+
+## Candidates
+
+| Candidate | What it predicts and data | Format, language, size, license | Hardware, latency, robustness, decision |
+|---|---|---|---|
+| **`superb/wav2vec2-base-superb-er` (primary)** | One of four IEMOCAP/SUPERB categories per utterance: neutral, happy, angry, sad. Model card says it follows a five-fold IEMOCAP protocol; its Hugging Face port table reports 0.6258 accuracy for Transformers on `session1` (S3PRL row: 0.6343). | English; 16 kHz raw speech; Apache-2.0 on model card; model files total about 378 MB. Uses standard Transformers `Wav2Vec2ForSequenceClassification` and feature extractor; no custom model class is required. | PyTorch CPU is the baseline; Apple MPS is optional only after local smoke test. No independent telephone/call latency or robustness measurement found. Model card's 0.6258 is narrow and in-corpus. Chosen for simple, documented, local inference—not for claimed accuracy. [R3, R4, R13] |
+| `speechbrain/emotion-recognition-wav2vec2-IEMOCAP` | Four-class IEMOCAP emotion classifier; card reports 78.7% test accuracy and “Avg: 75.3” without enough protocol detail in the card to treat it as directly comparable. Returns class outputs and uses a custom `foreign_class` predictor. | English; 16 kHz mono; Apache-2.0 model card; about 378 MB. Requires SpeechBrain development install and its repository's `custom_interface.py`. | Local PyTorch; no independent telephone latency/generalization evidence. Rejected as primary because custom code/development install increases fragility; a useful alternate if SUPERB integration fails, after separately reviewing remote code and dependencies. [R5] |
+| `audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim` | Regression outputs for arousal, dominance, and valence, not four named classes. Fine-tuned on MSP-Podcast. | English, 16 kHz-family Wav2Vec2; CC BY-NC-SA 4.0 model license. Large-model family; exact download and inference memory should be measured. | Could support dimensional experiments, but MSP-Podcast excludes telephone-bandwidth audio. Noncommercial/share-alike terms and output mismatch make it unsuitable for this MVP. No call-latency evidence verified. [R6, R12] |
+| `emotion2vec/emotion2vec_plus_large` | Model card advertises nine categories including `other` and `unknown`, which is attractive for abstention. | Approximately 300M-size model per card, but HF metadata says custom `model-license`; repository points to ModelScope/FunASR ecosystem. | Interesting research alternative; language/robustness claims are model-author claims, not independent field evidence. License and versioned runtime integration need further review. Not selected because this task needs a narrow, reproducible stack with a clearly identified use license. [R7] |
+| Feature-based SVM / openSMILE-style baseline | Hand-engineered acoustic features plus a classifier trained for a chosen label set. | Training set and code must be selected; no ready checkpoint chosen. | Appropriate as a later class exercise and useful interpretability comparison, but adds training/data-split work and is not a genuine pretrained inference path by itself. [R1, R2] |
+
+## Primary choice and exact contract
+
+Pin `superb/wav2vec2-base-superb-er` to a reviewed immutable Hub revision in the implementation commit, record the revision and weight-file hashes, and set `trust_remote_code=False` (the default). The model card says its input should be 16 kHz, and `config.json` maps class IDs to `neu`, `hap`, `ang`, and `sad`. It is an utterance classifier. The app maps labels only to “neutral,” “happy,” “angry,” and “sad”; it must not invent “fear,” “nervous,” “distress,” or “urgency.” [R3, R4]
+
+The model's Apache license identifies the model artifact's published license; it does not grant rights to copy IEMOCAP training audio. Do not download, bundle, or redistribute IEMOCAP unless the student is authorized under USC's license. RAVDESS is a separate, attribution-required dataset and can be used for a controlled academic test subject to its terms. [R3, R8, R10]
+
+## Runtime and latency
+
+The model repository is 378 MB. The MacBook Air M5 with 16 GB RAM is a reasonable local-inference candidate on memory grounds, but this is an engineering expectation, not a measured runtime result. No model was downloaded and no timing benchmark was run. PyTorch supports Apple MPS on macOS, with operation coverage varying; start with CPU-safe inference and add MPS only after the exact model passes a real test on the machine. The report must measure cold load, warm per-window latency, total processing time, audio duration, device, OS/Python/library versions, and whether this met the demonstrated workflow. [R3, R13]
+
+## Why not use Gemini for SER
+
+Gemini 3.8 Flash is the selected coding agent because it appears in the installed OMP catalog. It is not the application model. The app must never upload recordings to Gemini, OpenRouter, Antigravity, or another external inference API. The runtime classifier downloads model weights separately and runs inference on the local machine. [R23, R24]
