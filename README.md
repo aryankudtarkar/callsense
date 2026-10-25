@@ -71,3 +71,4 @@ Open `http://127.0.0.1:8000` (or `http://127.0.0.1:8000/analyze` directly) in yo
   - Browser microphone capture introduces unnecessary permission and privacy surface without operational justification for a post-call review prototype.
   - No fake live animations or simulated streaming loops are permitted or implemented.
 # callsense
+# callsense
